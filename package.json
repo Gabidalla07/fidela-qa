@@ -1,0 +1,17 @@
+{
+  "name": "serverest-qa-fidela",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Teste técnico QA Fidela - Parte C (automação web e API no ServeRest)",
+  "scripts": {
+    "test": "playwright test",
+    "test:api": "playwright test --project=api",
+    "test:web": "playwright test --project=web",
+    "test:headed": "playwright test --project=web --headed",
+    "report": "playwright show-report reports/html"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.48.0",
+    "ajv": "^8.17.0"
+  }
+}
