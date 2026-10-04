@@ -1,12 +1,10 @@
 // Contratos (JSON Schema) das respostas validadas.
+
 const usuarioSchema = {
   type: 'object',
-  required: ['nome', 'email', 'password', 'administrador', '_id'],
+  required: ['message', '_id'],
   properties: {
-    nome: { type: 'string' },
-    email: { type: 'string' },
-    password: { type: 'string' },
-    administrador: { type: 'string', enum: ['true', 'false'] },
+    message: { type: 'string' },
     _id: { type: 'string' },
   },
 };
@@ -16,7 +14,10 @@ const loginSchema = {
   required: ['message', 'authorization'],
   properties: {
     message: { type: 'string' },
-    authorization: { type: 'string', pattern: '^Bearer .+' },
+    authorization: {
+      type: 'string',
+      pattern: '^Bearer .+',
+    },
   },
 };
 

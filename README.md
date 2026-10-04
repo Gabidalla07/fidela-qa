@@ -1,63 +1,228 @@
 # Teste técnico QA Fidela — Parte C (Automação)
 
-Automação web e de API sobre o [ServeRest](https://serverest.dev), usando **Playwright (JavaScript)**.
+Automação de testes Web e API sobre o ServeRest, utilizando Playwright com JavaScript.
 
 ## Instalação
 
-Requisitos: Node.js 18+ e Git.
+### Requisitos
+
+- Node.js 18+
+- Git
+
+### Instalar dependências
 
 ```bash
 npm install
 npx playwright install chromium
 ```
 
-> Se o download do navegador falhar (rede corporativa), use o Google Chrome instalado na máquina:
-> `PW_CHANNEL=chrome npm test` (Windows PowerShell: `$env:PW_CHANNEL="chrome"; npm test`).
+Caso o download do navegador falhe em uma rede corporativa, pode ser utilizado o Google Chrome instalado na máquina.
+
+No Windows PowerShell:
+
+```powershell
+$env:PW_CHANNEL="chrome"; npm test
+```
 
 ## Execução
 
-Toda a suíte (API + web) com **um único comando**:
+Toda a suíte de testes pode ser executada com um único comando:
 
 ```bash
 npm test
 ```
 
-Opcionais: `npm run test:api`, `npm run test:web`, `npm run test:headed` (navegador visível) e `npm run report` (abre o relatório HTML).
+Também estão disponíveis comandos específicos:
 
-## Relatórios
+```bash
+npm run test:api
+npm run test:web
+npm run test:headed
+npm run report
+```
 
-- `reports/ULTIMA-EXECUCAO.md`: resumo da última execução, com **data e hora (Brasília)** e resultado de cada teste (versionado no repositório).
-- `reports/html/`: relatório HTML detalhado, gerado pelo Playwright e incluído nos artefatos do GitHub Actions.
+### Comandos
+
+- `npm test` — executa toda a suíte de testes.
+- `npm run test:api` — executa somente os testes de API.
+- `npm run test:web` — executa somente os testes Web.
+- `npm run test:headed` — executa os testes Web com o navegador visível.
+- `npm run report` — abre o relatório HTML do Playwright.
 
 ## O que está coberto
 
-**C1 — Web** (`tests/web`): login com sucesso, login com senha inválida, login com e-mail vazio, login com senha vazia e um fluxo pós-login (admin cadastra um produto e o vê na listagem).
+### C1 — Web
 
-**C2 — API** (`tests/api`): cadastro de usuário (sucesso e e-mail duplicado), login (token Bearer e credenciais inválidas), cadastro de produto (sem token → 401, usuário comum → 403, admin → 201) e validação de contrato (campos e tipos) de `GET /usuarios/{id}` e `POST /login`.
+Localização: `tests/web/`
 
-**C3 — Estratégia:** veja [`docs/C3-estrategia-automacao.md`](docs/C3-estrategia-automacao.md).
+Os seguintes cenários foram automatizados:
 
-## Decisões tomadas
+- Login com sucesso.
+- Login com senha inválida.
+- Validação de campo obrigatório vazio.
+- Fluxo funcional após o login: acesso à Lista de Compras.
 
-- **Playwright para web e API:** uma ferramenta só, uma configuração, um relatório e um comando. Os dois ambientes ficam como *projects* separados (`api` e `web`) no `playwright.config.js`.
-- **Ambiente online (`serverest.dev`):** o front online sempre usa a API online, então os dados do teste web são criados na API online. A execução local do ServeRest não foi usada.
-- **Dados gerados a cada execução:** e-mail único (UUID + timestamp), senha aleatória e nome de produto único. O ambiente é compartilhado e apagado diariamente, então nenhum teste depende de dado pré-existente. **Não há credenciais reais no código.**
-- **Testes web com dados criados pela API:** cadastrar o usuário via API antes de abrir o navegador deixa o teste mais rápido e estável, e cada teste fica independente dos outros (podem rodar em paralelo).
-- **Page Objects** (`pages/`): seletores concentrados em um lugar; se a tela mudar, o ajuste é em um arquivo só.
-- **Seletores:** `data-testid` quando existe; senão, papel e nome acessível (`getByRole`). Evitei CSS e XPath frágeis.
-- **Fluxo pós-login escolhido (cadastro de produto pelo admin):** é a função de negócio principal do perfil administrador, exercita autenticação, autorização e escrita de dados, e é verificável na própria tela (produto aparece na listagem).
-- **Contrato com JSON Schema (Ajv):** valida presença e tipo dos campos. Os schemas não proíbem campos extras, para não quebrar com evolução compatível da API; se o time quiser contrato mais rígido, basta adicionar `additionalProperties: false`.
-- **Cada teste de API verifica status e mensagem**, não só o status, para não aceitar o erro "certo" pelo motivo errado.
-- **Relatório com data/hora:** um reporter próprio (`reporters/resumo-reporter.js`) gera o resumo em Markdown a cada execução, mesmo com falhas.
-- **CI (opcional):** GitHub Actions em `.github/workflows/ci.yml` roda a suíte a cada push e guarda os relatórios como artefato.
+O fluxo de Lista de Compras foi escolhido por representar uma funcionalidade disponível ao usuário autenticado no frontend online e por permitir validar uma jornada funcional além da autenticação.
 
-## Estrutura
+Os dados do usuário utilizado no teste Web são criados pela API antes da abertura do navegador, evitando dependência de dados previamente existentes no ambiente.
 
+### C2 — API
+
+Localização: `tests/api/`
+
+Foram automatizados:
+
+- Cadastro de usuário com sucesso.
+- Cadastro de usuário com e-mail já cadastrado.
+- Login com sucesso, verificando o token retornado.
+- Login com credenciais inválidas.
+- Cadastro de produto sem token.
+- Cadastro de produto com token de usuário comum.
+- Cadastro de produto com token de administrador.
+- Validação de contrato da resposta de cadastro de usuário utilizando JSON Schema com Ajv, verificando campos obrigatórios e seus tipos.
+
+Os testes utilizam dados gerados durante a execução, incluindo e-mails únicos e nomes de produtos únicos, evitando dependência de dados previamente cadastrados.
+
+## C3 — Estratégia de automação
+
+A estratégia de automação está documentada em:
+
+`docs/C3-estrategia-automacao.md`
+
+De forma geral, a priorização considera:
+
+- frequência de execução;
+- repetitividade;
+- criticidade para o negócio;
+- estabilidade da funcionalidade;
+- participação na regressão;
+- custo e benefício da automação.
+
+Cenários exploratórios, avaliações de usabilidade e funcionalidades instáveis permanecem preferencialmente manuais.
+
+A automação deve gerar valor por reduzir esforço repetitivo, aumentar a frequência da regressão e permitir identificação rápida de falhas.
+
+## Decisões técnicas
+
+### Playwright
+
+Foi utilizado Playwright para os testes Web e API, permitindo manter uma única ferramenta e uma única suíte de execução.
+
+Os projetos `api` e `web` são separados na configuração do Playwright.
+
+### Dados de teste
+
+Os dados são gerados a cada execução.
+
+Os usuários possuem e-mails únicos e os produtos possuem nomes únicos, evitando dependência de dados existentes no ambiente compartilhado do ServeRest.
+
+Não são utilizadas credenciais reais no código.
+
+### Preparação dos testes Web
+
+Quando necessário, os dados utilizados pelo teste Web são preparados pela API antes da abertura do navegador.
+
+Essa abordagem reduz o tempo de preparação e deixa o teste mais independente de dados previamente cadastrados.
+
+### Page Objects
+
+O fluxo de login utiliza o Page Object `LoginPage`, mantendo seletores e comportamentos da tela centralizados na pasta `pages/`.
+
+Há também um Page Object preparado para cadastro de produtos.
+
+Essa organização facilita a manutenção dos testes caso os elementos da interface sejam alterados.
+
+### Seletores
+
+Foram priorizados:
+
+- `data-testid`, quando disponível;
+- `getByRole` e nomes acessíveis, quando apropriado.
+
+A intenção é evitar seletores frágeis baseados em CSS ou XPath sempre que possível.
+
+### Fluxo pós-login
+
+A Lista de Compras foi escolhida como fluxo funcional após o login por representar uma funcionalidade disponível ao usuário autenticado no frontend online e por permitir validar uma jornada funcional além da autenticação.
+
+## Estrutura do projeto
+
+```text
+.github/
+  workflows/
+
+docs/
+  C3-estrategia-automacao.md
+
+helpers/
+  api.js
+  data.js
+  schemas.js
+
+pages/
+  LoginPage.js
+  CadastroProdutoPage.js
+
+reporters/
+  resumo-reporter.js
+
+reports/
+  ULTIMA-EXECUCAO.md
+
+tests/
+  api/
+    usuarios.spec.js
+    login.spec.js
+    produtos.spec.js
+    contrato.spec.js
+
+  web/
+    login.spec.js
+    compra.spec.js
+    produto.spec.js
+
+.gitignore
+package.json
+playwright.config.js
+README.md
 ```
-tests/api/       testes de API (usuários, login, produtos, contrato)
-tests/web/       testes web (login e fluxo do admin)
-pages/           Page Objects
-helpers/         dados de teste, chamadas de API, schemas
-reporters/       reporter do resumo da última execução
-docs/            C3 - estratégia de automação
-```
+
+## Relatórios
+
+A última execução da suíte é registrada em:
+
+`reports/ULTIMA-EXECUCAO.md`
+
+O relatório contém a data e o horário da execução e o resultado dos testes.
+
+O Playwright também gera o relatório HTML detalhado da execução.
+
+## CI
+
+O projeto possui configuração de GitHub Actions para execução automatizada da suíte.
+
+A execução utiliza Node.js, instala as dependências e os navegadores do Playwright e executa os testes.
+
+Os relatórios podem ser disponibilizados como artefatos da execução.
+
+## Ambiente utilizado
+
+Frontend:
+
+https://front.serverest.dev
+
+API:
+
+https://serverest.dev
+
+O frontend utilizado nos testes é o ambiente online do ServeRest e utiliza a API online correspondente.
+
+A execução local do ServeRest não é utilizada para os testes Web.
+
+Os testes geram seus próprios dados durante a execução, considerando que o ambiente online é compartilhado e pode ter seus dados removidos periodicamente.
+
+## Observações
+
+Nenhuma credencial real é utilizada no projeto.
+
+Os testes foram desenvolvidos para serem executados de forma independente e evitar dependência de dados previamente existentes no ambiente.

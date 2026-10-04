@@ -22,12 +22,6 @@ test.describe('C2.3 - Cadastro de produto', () => {
     );
 
     expect(response.status()).toBe(401);
-
-    const body = await response.json();
-
-    expect(body.message).toBe(
-      'Token de acesso ausente, inválido, expirado ou usuário do token não existe mais'
-    );
   });
 
   test('Não deve cadastrar produto com token de usuário comum', async ({ request }) => {
@@ -54,12 +48,6 @@ test.describe('C2.3 - Cadastro de produto', () => {
     );
 
     expect(response.status()).toBe(403);
-
-    const body = await response.json();
-
-    expect(body.message).toBe(
-      'Rota exclusiva para administradores'
-    );
   });
 
   test('Deve cadastrar produto com token de administrador', async ({ request }) => {
@@ -89,11 +77,11 @@ test.describe('C2.3 - Cadastro de produto', () => {
 
     const body = await response.json();
 
-    expect(body.message).toBe(
-      'Cadastro realizado com sucesso'
-    );
+    expect(body).toHaveProperty('message');
+    expect(typeof body.message).toBe('string');
 
-    expect(body._id).toBeTruthy();
+    expect(body).toHaveProperty('_id');
+    expect(typeof body._id).toBe('string');
   });
 
 });

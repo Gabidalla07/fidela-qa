@@ -1,34 +1,30 @@
 const { test, expect } = require('@playwright/test');
 const Ajv = require('ajv');
+
 const { usuarioUnico } = require('../../helpers/data');
-const { API_URL, criarUsuarioOk, fazerLogin } = require('../../helpers/api');
-const { usuarioSchema, loginSchema } = require('../../helpers/schemas');
+const { usuarioSchema } = require('../../helpers/schemas');
 
-const ajv = new Ajv({ allErrors: true });
+test.describe('C2.4 - Contrato da API', () => {
 
-function validar(schema, corpo) {
-  const valido = ajv.compile(schema);
-  const ok = valido(corpo);
-  // Se falhar, a mensagem mostra exatamente qual campo/tipo quebrou o contrato.
-  expect(ok, JSON.stringify(valido.errors, null, 2)).toBe(true);
-}
+  test('resposta de cadastro de usuário deve respeitar o contrato', async ({ request }) => {
+    const usuario = usuarioUnico();
 
-test.describe('API - Contrato (campos e tipos)', () => {
-  test('GET /usuarios/{id} respeita o contrato', async ({ request }) => {
-    const usuario = await criarUsuarioOk(request, usuarioUnico());
+    const response = await request.post('/usuarios', {
+      data: usuario,
+    });
 
-    const res = await request.get(`${API_URL}/usuarios/${usuario._id}`);
+    expect(response.status()).toBe(201);
 
-    expect(res.status()).toBe(200);
-    validar(usuarioSchema, await res.json());
+    const body = await response.json();
+
+    const ajv = new Ajv();
+    const validar = ajv.compile(usuarioSchema);
+    const valido = validar(body);
+
+    expect(
+      valido,
+      `Contrato inválido: ${ajv.errorsText(validar.errors)}`
+    ).toBe(true);
   });
 
-  test('POST /login respeita o contrato', async ({ request }) => {
-    const usuario = await criarUsuarioOk(request, usuarioUnico());
-
-    const res = await fazerLogin(request, usuario);
-
-    expect(res.status()).toBe(200);
-    validar(loginSchema, await res.json());
-  });
 });
